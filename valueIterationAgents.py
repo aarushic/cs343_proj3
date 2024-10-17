@@ -78,7 +78,6 @@ class ValueIterationAgent(ValueEstimationAgent):
                     qValues = []
                     for action in actions:
                         qValues.append(self.computeQValueFromValues(state, action))
-                    
                     updatedValues[state] = max(qValues)
 
             self.values = updatedValues  
@@ -99,13 +98,13 @@ class ValueIterationAgent(ValueEstimationAgent):
         "*** YOUR CODE HERE ***"
         qValue = 0
         states = self.mdp.getTransitionStatesAndProbs(state, action)
+
         for transitionState in states:
             nextState = transitionState[0]
             probability = transitionState[1]
-
             reward = self.mdp.getReward(state, action, nextState)
-
-            qValue += probability * (reward + self.discount * self.values[nextState])
+            discVal = self.discount * self.values[nextState]
+            qValue += probability * (reward + discVal)
 
         return qValue
 
@@ -188,7 +187,8 @@ class AsynchronousValueIterationAgent(ValueIterationAgent):
                 #calculate q values for all potential states
                 for newState, prob in self.mdp.getTransitionStatesAndProbs(state, action):
                     currReward = self.mdp.getReward(state, action, newState)
-                    currVal += prob * (currReward + self.discount * self.getValue(newState))
+                    discVal = self.discount * self.getValue(newState)
+                    currVal += prob * (currReward + discVal)
                 maxVal = max(currVal, maxVal)
             self.values[state] = maxVal
 
@@ -232,7 +232,7 @@ class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
                     maxQ = max(maxQ, self.computeQValueFromValues(s, action) )
                 
                 #push s into the priority queue with priority -diff 
-                diff = abs(self.values[s] - maxQ)
+                diff = abs(maxQ - self.values[s])
                 priorityQ.push(s, -diff)
 
         for i in range(self.iterations):
@@ -248,7 +248,6 @@ class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
                 maxQ = float('-inf')
                 for action in self.mdp.getPossibleActions(s):
                     maxQ = max(maxQ, self.computeQValueFromValues(s, action))
-        
                 self.values[s] = maxQ
 
             #for each predecessor p of s
@@ -258,6 +257,6 @@ class PrioritizedSweepingValueIterationAgent(AsynchronousValueIterationAgent):
                 for action in self.mdp.getPossibleActions(p):
                     maxQ = max(maxQ, self.computeQValueFromValues(p, action) )
                 #if diff > theta, push p into the priority queue with priority -diff 
-                diff = abs(self.values[p] - maxQ)
+                diff = abs(maxQ - self.values[p])
                 if diff > self.theta:
                     priorityQ.update(p, -diff)
